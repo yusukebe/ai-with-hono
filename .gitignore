@@ -1,0 +1,6 @@
+bun.lock
+node_modules
+.wrangler
+.mf
+*.tgz
+dist
