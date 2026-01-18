@@ -1,6 +1,8 @@
 bun.lock
+package-lock.json
 node_modules
 .wrangler
 .mf
 *.tgz
 dist
+.claude/settings.local.json

@@ -3,9 +3,5 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ],
-  "devDependencies": {
-    "@hono/eslint-config": "^2.0.5",
-    "eslint": "^9.39.2"
-  }
+  ]
 }

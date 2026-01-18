@@ -1,0 +1,15 @@
+{
+  "name": "mcp",
+  "scripts": {
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
+    "@modelcontextprotocol/server": "https://pkg.pr.new/modelcontextprotocol/typescript-sdk/@modelcontextprotocol/server@1326",
+    "hono": "^4.11.4",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "wrangler": "^4.59.2"
+  }
+}
