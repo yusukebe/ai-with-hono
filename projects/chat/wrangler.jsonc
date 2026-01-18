@@ -1,0 +1,6 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chat",
+  "compatibility_date": "2026-01-01",
+  "main": "./src/index.tsx"
+}
