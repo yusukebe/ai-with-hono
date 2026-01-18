@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.6",
+    "fetch-event-stream": "^0.1.6",
     "hono": "^4.11.4",
     "zod": "^4.3.5"
   },
