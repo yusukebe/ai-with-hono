@@ -5,6 +5,7 @@
     "packages/*"
   ],
   "devDependencies": {
-    "@hono/cli": "^0.1.8"
+    "@hono/cli": "^0.1.8",
+    "@types/node": "^25.0.9"
   }
 }
