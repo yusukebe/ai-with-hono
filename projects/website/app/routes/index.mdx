@@ -1,0 +1,279 @@
+---
+title: 'AI with Hono'
+---
+
+# AI with Hono
+
+- January 21, 2026
+
+## Me
+
+- Yusuke Wada
+- Web application developer
+- Developer Advocate @Cloudflare
+- A founder of Bokete
+- Creator of Hono
+- [https://github.com/yusukebe](https://github.com/yusukebe)
+
+## Honoの現状
+
+- 28.3K GitHub stars
+- 1000万 downloads/week
+- Used in many products
+
+![SS](https://ss.yusukebe.com/ad763468673f1b88067f0ca67135996e53de677ca634834ac041f7235bcd3868.png)
+
+![SS](https://ss.yusukebe.com/7ba89afc72af9a5b71127063aba0cfa08e07f35cc13dfa15c0dc03ae0033e588.png)
+
+## AI with Hono
+
+- Honoを使ってAIをすることについて話します
+
+## アジェンダ
+
+1. Hono CLIによるAIへの取り組み
+2. MCPをHonoが支える
+3. HonoでAIアプリをつくる
+4. AI時代にフレームワークは必要か？
+
+# 1. Hono CLIによるAIへの取り組み
+
+## Hono CLI
+
+- 2025/10/18 Hono Conferenceで発表
+- "CLI for Human and AI with Hono"
+- `npm install @hono/cli`
+
+## 全く新しいコンセプト
+
+- `create-*`コマンドではない
+- ただの開発ツール（サーバー・ビルド・デプロイ）ではない
+- Viteのラッパーではない
+
+## `hono`コマンド
+
+```bash
+hono --help
+```
+
+## 5つのサブコマンド
+
+```bash
+# Show help
+hono --help
+
+# Display documentation
+hono docs
+
+# Search documentation
+hono search middleware
+
+# Send request to Hono app
+hono request
+
+# Start server
+hono serve
+
+# Generate an optimized Hono app
+hono optimize
+```
+
+## `hono docs`
+
+```bash
+hono docs [path]
+hono docs /docs/api/context
+```
+
+## `hono search`
+
+```bash
+hono search <query>
+hono search middleware
+```
+
+## AIが使うと⋯
+
+![SS](https://ss.yusukebe.com/62e501dc564761cf23087898113a76819edbd0582192b92ec720dbd42be0a740.png)
+
+## `hono request`
+
+```bash
+hono request [file]
+hono request src/index.ts
+```
+
+## いくつかのオプション
+
+```bash
+hono request \
+  -P /api/usrs \
+  -X POST \
+  -d '{"name":"Alice"}' \
+  src/index.ts
+```
+
+## アプリのテストに便利
+
+### サーバーを立ち上げる
+
+```bash
+wrangler dev
+curl http://localhost:8787
+```
+
+### サーバーを立ち上げなくていい
+
+```bash
+hono request
+```
+
+## つまり⋯AIが使うと
+
+1. `hono search` - ドキュメントを検索
+2. `hono docs` - ドキュメントを読む
+3. `hono request` - アプリをテストする
+
+## CLAUDE.mdやAGENTS.mdに書くとよい
+
+```
+### Workflow
+
+1. Search documentation: `hono search <query>`
+2. Read relevant docs: `hono docs [path]`
+3. Test implementation: `hono request [file]`
+```
+
+## `hono serve`
+
+```bash
+hono serve src/index.ts
+```
+
+`http://localhost:7070` でサーバーが立ち上げる
+
+## `--use` オプション
+
+```bash
+hono serve \
+  --use "logger()" \
+  src/inidex.ts
+```
+
+## 複雑な例
+
+```bash
+hono serve \
+  --use "logger" \
+  --use "bashcAuth({username:'foo',password:'bar'})" \
+  src/index.ts
+```
+
+## ファイルサーバー
+
+```bash
+hono serve \
+  --use "serveStatic({root:'./'})"
+```
+
+## プロキシ
+
+```bash
+hono serve \
+  --use '(c) => proxy(`https://ramen-api.dev${new URL(c.req.url).pathname}`)'
+```
+
+## `hono optimize`
+
+```bash
+hono optimize [entry]
+```
+
+## 最適化
+
+- 対象のアプリに最適化された`Hono`を作ってくれる => ファイルサイズの削減
+- ルーティング
+- API削除
+  - Hono - `route` / `mount` / `fire`
+  - Context - `c.body` / `c.json` / `c.html` / `c.text` …
+  - HonoRequest - `c.req.json()` / `c.req.formData()`…
+
+## 例
+
+```ts
+import { Hono } from 'hono'
+
+const app = new Hono()
+
+app.get('/', async (c) => {
+  return c.json({ message: 'Hello' })
+})
+
+app.get('/health', (c) => c.text('OK'))
+
+export default app
+```
+
+## 結果
+
+![SS](https://ss.yusukebe.com/c13c1795265a38cb7d37e169feb795c82f3d8ff80b7dda45e130d9e1f37afa32.png)
+
+## おさらい
+
+5つのサブコマンド
+
+```bash
+# Show help
+hono --help
+
+# Display documentation
+hono docs
+
+# Search documentation
+hono search middleware
+
+# Send request to Hono app
+hono request
+
+# Start server
+hono serve
+
+# Generate an optimized Hono app
+hono optimize
+```
+
+## `wrangler run`?
+
+![SS](https://ss.yusukebe.com/6494fb74be3d2f0ee10512c9d194878bc8e51278ffb456061acf9f0eaf6ddbcc.png)
+
+[https://x.com/yusukebe/status/2011974518026485767/quotes](https://x.com/yusukebe/status/2011974518026485767/quotes)
+
+## VS Code拡張
+
+- Hono CLIを利用したVS Codeの拡張
+- リクエスト、Watch、Debugができる
+
+![SS](https://ss.yusukebe.com/ffd20735fc6c04263e450b382502d7a0367d998ab5715f4b090d5e5ec709925d.png)
+
+## Skills
+
+- Hono CLIを使ったAgent Skillを作る試み
+- [https://github.com/yusukebe/hono-skill](https://github.com/yusukebe/hono-skill)
+
+# 2. MCPをHonoが支える
+
+## HonoとMCP
+
+- HonoでMCPサーバーを作るのは有効である
+  - MCPライブラリがHonoを使っている
+  - HonoアプリでMCPサーバーを作る
+
+# 3. HonoでAIアプリをつくる
+
+# 4. AI時代にフレームワークは必要か？
+
+# まとめ
+
+```
+
+```
