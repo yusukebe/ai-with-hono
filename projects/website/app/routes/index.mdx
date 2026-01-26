@@ -543,12 +543,42 @@ app.get('/', async (c) => {
 export default app
 ```
 
+クライアントの実装:
+
+```ts
+import { stream } from 'fetch-event-stream'
+import { stdout } from 'node:process'
+
+const events = await stream('http://localhost:8787')
+
+for await (let event of events) {
+  if (event.data) {
+    try {
+      const data = JSON.parse(event.data)
+      stdout.write(data.response)
+    } catch {}
+  }
+}
+```
+
 ## その他のAPIも叩ける
 
 - OpenAI
 - Claude
-- Replicate
+- [Replicate](https://replicate.com/)
 - etc.
+
+## チャットアプリの例
+
+- 途中まで作ってあとはAIにやってもらう作戦
+
+## 手順
+
+- Cloudflare + Viteプロジェクトの作成
+- LLMを叩く
+- スキーマ・バリデーション
+- SSRレンダリング
+- クライアント
 
 # 4. AI時代にフレームワークは必要か？
 
@@ -569,5 +599,29 @@ export default app
 # 余談 - このWebページもHonoで出来てる
 
 - HonoX
+- SSG
+- MDX
+- Frontmatter
+- Shiki
+
+```
+.
+├── app
+│   ├── client.ts
+│   ├── global.d.ts
+│   ├── routes
+│   │   ├── _404.tsx
+│   │   ├── _error.tsx
+│   │   ├── _renderer.tsx
+│   │   └── index.mdx
+│   ├── server.ts
+│   └── style.css
+├── package.json
+├── public
+│   └── favicon.ico
+├── tsconfig.json
+├── vite.config.ts
+└── wrangler.jsonc
+```
 
 # まとめ
