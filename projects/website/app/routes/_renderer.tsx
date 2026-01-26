@@ -2,7 +2,6 @@ import { jsxRenderer } from 'hono/jsx-renderer'
 import { Link, Script } from 'honox/server'
 
 export default jsxRenderer(({ children, frontmatter }) => {
-  console.log(frontmatter)
   return (
     <html lang="en">
       <head>
