@@ -17,13 +17,38 @@ title: 'AI with Hono'
 
 ## Honoの現状
 
-- 28.3K GitHub stars
-- 1000万 downloads/week
+- 2021年12月から4年ちょっと
+- [28.4K GitHub stars](https://github.com/honojs/hono)
+- [5,000万ダウンロード / 月](https://npmtrends.com/hono)
 - Used in many products
 
 ![SS](https://ss.yusukebe.com/ad763468673f1b88067f0ca67135996e53de677ca634834ac041f7235bcd3868.png)
 
 ![SS](https://ss.yusukebe.com/7ba89afc72af9a5b71127063aba0cfa08e07f35cc13dfa15c0dc03ae0033e588.png)
+
+## 使ってるところ例
+
+![May products](https://ss.yusukebe.com/496b2aa0bc3252163e69275b2c4f25bd7013e89e99c200fd3d3d228bbbd921c0.png)
+
+## Cloudflare社内
+
+- KV
+- Email
+- AI Search
+- R2
+- Containers
+- Images
+- Warp
+- Browser Isolation
+- Dashboard
+- PubSub
+- Workers AI
+- Queues
+- AI Gateway
+- Workflows
+- Access
+- Stream
+- Observability
 
 ## AI with Hono
 
@@ -412,6 +437,12 @@ app.all('/mcp', async (c) => {
 
 ## これからはMCP SDKでできる
 
+pkg.pr.newのバージョンを使う:
+
+```bash
+bun add https://pkg.pr.new/modelcontextprotocol/typescript-sdk/@modelcontextprotocol/server@1326
+```
+
 `mcp-server.ts`:
 
 ```ts
@@ -580,6 +611,163 @@ for await (let event of events) {
 - SSRレンダリング
 - クライアント
 
+## Cloudflare + Viteプロジェクトの作成
+
+Create-honoを使い、`cloudflare-workers+vite`を選ぶ:
+
+```bash
+bun create hono@latest my-chat
+```
+
+## LLMを叩く
+
+`wrangler.jsonc`のBindingsにAIを足す:
+
+```json
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "my-chat",
+  "compatibility_date": "2025-08-03",
+  "main": "./src/index.tsx",
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  }
+}
+```
+
+型定義を書き出す:
+
+```bash
+bun run cf-typegen
+```
+
+ジェネリクスに渡す:
+
+```ts
+// src/index.tsx
+const app = new Hono<{ Bindings: CloudflareBindings }>()
+```
+
+Workers AIのLLMを叩いてストリームを返す:
+
+```ts
+// src/index.tsx
+app.get('/stream', async (c) => {
+  const stream = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    messages: [{ role: 'user', content: 'Hello!' }],
+    stream: true
+  })
+  return c.body(stream, 200, {
+    'Content-Type': 'text/event-stream'
+  })
+})
+```
+
+## スキーマ・バリデーション
+
+`messages`を受け取るためのスキーマ定義:
+
+```ts
+// src/index.tsx
+import * as z from 'zod'
+
+// ...
+
+const schema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.enum(['system', 'user', 'assistant']),
+      content: z.string()
+    })
+  )
+})
+```
+
+POSTで受け取り、バリデーションする:
+
+```ts
+// src/index.tsx
+import { zValidator } from '@hono/zod-validator'
+
+// ...
+
+app.post('/stream', zValidator('json', schema), async (c) => {
+  const data = c.req.valid('json')
+  const stream = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    messages: data.messages,
+    stream: true
+  })
+  return c.body(stream, 200, {
+    'Content-Type': 'text/event-stream'
+  })
+})
+```
+
+## SSRレンダリング
+
+トップページをSSRで作る:
+
+```tsx
+// src/index.tsx
+app.get('/', (c) => {
+  return c.render(
+    <div id="chat-container">
+      <div id="messages"></div>
+      <form id="chat-form">
+        <textarea id="input" placeholder="Type a message..." rows={3}></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  )
+})
+```
+
+## クライアント
+
+vite-ssr-componentsから`Script`をインポートしてクライアントファイルを指定:
+
+```tsx
+// src/renderer.tsx
+import { jsxRenderer } from 'hono/jsx-renderer'
+import { Script, Link, ViteClient } from 'vite-ssr-components/hono'
+
+export const renderer = jsxRenderer(
+  ({ children }) => {
+    return (
+      <html>
+        <head>
+          <ViteClient />
+          <Script src="/src/client.ts" />
+          <Link href="/src/style.css" rel="stylesheet" />
+        </head>
+        <body>{children}</body>
+      </html>
+    )
+  },
+  { stream: true }
+)
+```
+
+`client.ts`を作成する:
+
+```ts
+// src/client.ts
+/// <reference lib="dom" />
+/// <reference lib="dom.iterable" />
+```
+
+ストリームのパースに`fetch-event-stream`を使うと便利かも:
+
+```ts
+// src/client.ts
+import { events } from 'fetch-event-stream'
+```
+
+## AIに任せる
+
+あとはAIに任せる。
+
 # 4. AI時代にフレームワークは必要か？
 
 ## AI時代のフレームワーク
@@ -587,6 +775,14 @@ for await (let event of events) {
 - そもそもAI時代にHonoは必要か？
 - プリミティブな部品だけを組み合わせてアプリを作れる？
 - だからこそフレームワークは必要？
+
+## HonoとAIのベストプラクティス
+
+- LLMはもうHonoのことを結構知ってる
+- 必要に応じてSkillを使う
+  - 特にCloudflareとかプラットフォームの知識は古いままだったりする
+- 途中まで作ってあとはAIに任せるのあり
+- 設定等のつまずきはAIが解決してくれる
 
 ## Developers Summitの宣伝
 
@@ -625,3 +821,10 @@ for await (let event of events) {
 ```
 
 # まとめ
+
+Honoを使ってAIをすることについて話してきました。
+
+1. Hono CLIによるAIへの取り組み
+2. MCPをHonoが支える
+3. HonoでAIアプリをつくる
+4. AI時代にフレームワークは必要か？

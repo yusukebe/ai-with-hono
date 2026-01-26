@@ -15,7 +15,6 @@ app.get('/', (c) => {
         <textarea id="input" placeholder="Type a message..." rows={3}></textarea>
         <button type="submit">Send</button>
       </form>
-      <script type="module" src="/src/client.ts"></script>
     </div>
   )
 })
