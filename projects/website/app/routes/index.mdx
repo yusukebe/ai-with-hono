@@ -242,6 +242,28 @@ hono serve
 hono optimize
 ```
 
+## Workers Fetch
+
+- `hono request`と同機能をCloudflare Workers向けに切り出したもの
+- [https://github.com/yusukebe/workers-fetch](https://github.com/yusukebe/workers-fetch)
+
+```bash
+# GET request (auto-detects wrangler.json, wrangler.jsonc, or wrangler.toml)
+workers-fetch
+
+# With path
+workers-fetch /api/users
+
+# POST request
+workers-fetch -X POST -H "Content-Type:application/json" -d '{"name":"test"}' /api/users
+
+# Custom config file
+workers-fetch -c wrangler.toml /api/test
+
+# With timeout (5 seconds)
+workers-fetch --timeout 5 /api/slow
+```
+
 ## `wrangler run`?
 
 ![SS](https://ss.yusukebe.com/6494fb74be3d2f0ee10512c9d194878bc8e51278ffb456061acf9f0eaf6ddbcc.png)
@@ -268,12 +290,182 @@ hono optimize
   - MCPライブラリがHonoを使っている
   - HonoアプリでMCPサーバーを作る
 
+## MCPライブラリがHonoを使っている
+
+- [Mastra](https://github.com/mastra-ai/mastra)
+- [MCP公式SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [OpenCode](https://github.com/anomalyco/opencode)
+
+## MCP SDKでHonoが使われだした
+
+- Examples
+- `@modelcontextprotocol/hono` - hono
+- `@modelcontextprotocol/node` - @hono/node-server
+
+## MCP SDKの遷移
+
+- v1ではNode.jsのRequest/Response APIに依存していた
+- v2でWeb StandardのAPIをサポート
+
+![SS](https://ss.yusukebe.com/c902502f9a2f0aa7da6cc7ce0ca062513beadda5d3179829a17e7d5b6d0f0d6d.png)
+
+[https://github.com/modelcontextprotocol/typescript-sdk/issues/260](https://github.com/modelcontextprotocol/typescript-sdk/issues/260)
+
+## 基本的なシンタックス
+
+- Web Standardに対応したHTTPStreamable
+- ステートレス・ステートフルも扱いやすい
+
+```ts
+const transport = new WebStandardStreamableHTTPServerTransport()
+
+app.all('/mcp', async (c) => {
+  return transport.handleRequest(c.req.raw)
+})
+```
+
+## `@modelcontextprotocol/hono`
+
+- パースしたボディを変数 `c.get('parsedBody')` で使えるように
+- ホスト名でのバリデーションを可能に
+
+```ts
+import { McpServer, WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/server'
+import { createMcpHonoApp } from '@modelcontextprotocol/hono'
+
+const server = new McpServer({ name: 'my-server', version: '1.0.0' })
+const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined })
+await server.connect(transport)
+
+const app = createMcpHonoApp()
+app.all('/mcp', (c) => {
+  return transport.handleRequest(c.req.raw, { parsedBody: c.get('parsedBody') })
+})
+```
+
+## `@modelcontextprotocol/node`
+
+- Web StandardsのAPIとNode.jsのAPIの変換に使われている
+- `getRequestListener`はNode.jsの`req` / `res`を受け取る。`req`をWeb Standardsの`Request`に変換。ハンドラに渡す。返却された`Response`を`res`に変換する。
+
+```ts
+// https://github.com/modelcontextprotocol/typescript-sdk/blob/main/packages/middleware/node/src/streamableHttp.ts
+import { getRequestListener } from '@hono/node-server';
+
+//...
+
+async handleRequest (
+  req: IncomingMessage & { auth?: AuthInfo },
+  res: ServerResponse,
+  parsedBody?: unknown
+): Promise<void> {
+  // Store context for this request to pass through auth and parsedBody
+  // We need to intercept the request creation to attach this context
+  const authInfo = req.auth
+
+  // Create a custom handler that includes our context
+  // overrideGlobalObjects: false prevents Hono from overwriting global Response, which would
+  // break frameworks like Next.js whose response classes extend the native Response
+  const handler = getRequestListener(
+    async (webRequest: Request) => {
+      return this._webStandardTransport.handleRequest(webRequest, {
+        authInfo,
+        parsedBody
+      })
+    },
+    { overrideGlobalObjects: false }
+  )
+
+  // Delegate to the request listener which handles all the Node.js <-> Web Standard conversion
+  // including proper SSE streaming support
+  await handler(req, res)
+}
+```
+
+## それまでのアプローチ
+
+- CloudflareのAgents SDK - `agents/mcp`を使う
+- `@hono/mcp`を使う
+
+## `@hono/mcp`
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StreamableHTTPTransport } from '@hono/mcp'
+import { Hono } from 'hono'
+import { mcpServer } from './mcp-server'
+
+const app = new Hono()
+
+// Initialize the transport
+const transport = new StreamableHTTPTransport()
+
+app.all('/mcp', async (c) => {
+  if (!mcpServer.isConnected()) {
+    // Connect the mcp with the transport
+    await mcpServer.connect(transport)
+  }
+
+  return transport.handleRequest(c)
+})
+```
+
+## これからはMCP SDKでできる
+
+`mcp-server.ts`:
+
+```ts
+// mcp-server.ts
+import { McpServer } from '@modelcontextprotocol/server'
+import * as z from 'zod/v4'
+
+export const mcpServer = new McpServer({
+  name: 'simple-server',
+  version: '0.0.1'
+})
+
+mcpServer.registerTool(
+  'add',
+  {
+    title: 'Add a to b',
+    inputSchema: { a: z.number(), b: z.number() }
+  },
+  async ({ a, b }) => {
+    return {
+      content: [{ type: 'text', text: `${a + b}` }]
+    }
+  }
+)
+```
+
+`index.ts`:
+
+```ts
+// index.ts
+import { Hono } from 'hono'
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/server'
+import { mcpServer } from './mcp-server'
+
+const app = new Hono()
+
+const transport = new WebStandardStreamableHTTPServerTransport()
+
+app.all('/mcp', async (c) => {
+  if (!mcpServer.isConnected()) {
+    await mcpServer.connect(transport)
+  }
+  return transport.handleRequest(c.req.raw)
+})
+
+export default app
+```
+
+## MCP Server for Hono
+
+- https://github.com/mattzcarey/hono-mcp-server
+
 # 3. HonoでAIアプリをつくる
 
 # 4. AI時代にフレームワークは必要か？
 
 # まとめ
-
-```
-
-```
