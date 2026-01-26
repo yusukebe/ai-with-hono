@@ -505,7 +505,66 @@ export default mcp(app, {
 
 # 3. HonoでAIアプリをつくる
 
+## HonoでAIアプリをつくろう
+
+- LLM etc.を叩く
+  - Workers AI
+  - 外部API
+- レスポンスをストリーミングで表示する
+
+## Workers AIを使う
+
+- AIモデルを叩くにはWorkers AIが簡単
+- [https://developers.cloudflare.com/workers-ai/](https://developers.cloudflare.com/workers-ai/)
+
+```ts
+import { Hono } from 'hono'
+
+const app = new Hono<{
+  Bindings: CloudflareBindings
+}>()
+
+app.get('/', async (c) => {
+  const stream = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    messages: [
+      { role: 'system', content: 'You are a ramen master' },
+      {
+        role: 'user',
+        content: 'What is the tonkotsu ramen?'
+      }
+    ],
+    stream: true
+  })
+  return c.body(stream, 200, {
+    'Content-Type': 'text/event-stream'
+  })
+})
+
+export default app
+```
+
+## その他のAPIも叩ける
+
+- OpenAI
+- Claude
+- Replicate
+- etc.
+
 # 4. AI時代にフレームワークは必要か？
+
+## AI時代のフレームワーク
+
+- そもそもAI時代にHonoは必要か？
+- プリミティブな部品だけを組み合わせてアプリを作れる？
+- だからこそフレームワークは必要？
+
+## Developers Summitの宣伝
+
+- 2月20日 17:00 ～ 17:40
+- Hono開発者とユーザーが語る「AI時代にフレームワークは必要なのか？」
+- [https://event.shoeisha.jp/devsumi/20260218/session/6495](https://event.shoeisha.jp/devsumi/20260218/session/6495)
+
+![Developers Summit](https://ss.yusukebe.com/6c768f840c486b4e2613e65c268b8f1c9ce2d76008ac95c8c15a17e6e43e4360.png)
 
 # 余談 - このWebページもHonoで出来てる
 
