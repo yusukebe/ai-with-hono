@@ -477,28 +477,31 @@ import { z } from 'zod'
 import { mcp, registerTool } from 'hono-mcp-server'
 
 const app = new Hono()
-  .get('/users', registerTool('List all users'), (c) => c.json([{ id: 1, name: 'Alice' }]))
-  .get('/users/:id', registerTool('Get user by ID'), (c) => c.json({ id: c.req.param('id') }))
-  .post(
-    '/users',
-    registerTool({
-      description: 'Create a new user',
-      inputSchema: {
-        name: z.string().describe("User's full name"),
-        email: z.string().email().describe("User's email address")
-      }
-    }),
-    async (c) => {
-      const { name } = c.req.valid('json') // typed!
-      return c.json({ id: 1, name })
+
+app.get('/', (c) => {
+  return c.json({ message: 'Hello, MCP Server!' })
+})
+app.post(
+  '/hello',
+  registerTool({
+    description: 'Say hello',
+    inputSchema: {
+      name: z.string().describe('Your name')
     }
-  )
+  }),
+  (c) => {
+    const { name } = c.req.valid('json') // Typed!
+    return c.json({ message: `Hello ${name}!` })
+  }
+)
 
 export default mcp(app, {
-  name: 'Users API',
+  name: 'Simple MCP',
   version: '1.0.0'
 })
 ```
+
+![hono-mcp-server](https://ss.yusukebe.com/dddd6f9215dc4f2e70b692033f8eebcf1af93ea9e346938e3a14cfb41208d68e.png)
 
 # 3. HonoでAIアプリをつくる
 

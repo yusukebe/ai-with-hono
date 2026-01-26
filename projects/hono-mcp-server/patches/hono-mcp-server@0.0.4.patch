@@ -1,0 +1,49 @@
+diff --git a/node_modules/hono-mcp-server/.bun-tag-5b91f9333d79db19 b/.bun-tag-5b91f9333d79db19
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/hono-mcp-server/.bun-tag-9c0f804df9d7c80e b/.bun-tag-9c0f804df9d7c80e
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+index abe5e0c6695dd8bb9fdbac32037dfb757592a5c3..1eeac40f01f904b32147cf6a0027d6f5b82348a7 100644
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -75,7 +75,7 @@ interface McpOptions {
+  * ```
+  *
+  */
+-declare function mcp<E extends Env>(app: Hono<E>, options: McpOptions): Hono<E>;
++declare function mcp<E, S, B extends string>(app: Hono<E, S, B>, options: McpOptions): Hono<E, S, B>;
+ //#endregion
+ export { type DescribeConfig, type McpOptions, mcp, registerTool };
+ //# sourceMappingURL=index.d.mts.map
+\ No newline at end of file
+diff --git a/dist/index.mjs b/dist/index.mjs
+index f6b806c9aa5719b7a6f707793fb4ac4ef7f39d92..73bbe4f95dc1b32c24f35159072f19b6524291fd 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -180,7 +180,14 @@ function registerRouteAsTool(server, route, app) {
+ 		}
+ 		const query = params["query"];
+ 		if (query && Object.keys(query).length > 0) url = `${url}?${new URLSearchParams(query).toString()}`;
+-		const body = params["body"];
++		let body;
++		if (metadata?.inputSchema) {
++			body = Object.fromEntries(
++				Object.entries(params).filter(([key]) => !pathParams.includes(key))
++			);
++		} else {
++			body = params["body"];
++		}
+ 		const init = {
+ 			method: route.method,
+ 			headers: {
+@@ -188,7 +195,7 @@ function registerRouteAsTool(server, route, app) {
+ 				Accept: "application/json"
+ 			}
+ 		};
+-		if (body && [
++		if (body && Object.keys(body).length > 0 && [
+ 			"POST",
+ 			"PUT",
+ 			"PATCH"

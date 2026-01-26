@@ -1,0 +1,16 @@
+{
+  "name": "hono-mcp-server",
+  "scripts": {
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "hono": "^4.11.5",
+    "hono-mcp-server": "^0.0.4"
+  },
+  "devDependencies": {
+    "wrangler": "^4.59.2"
+  },
+  "patchedDependencies": {
+    "hono-mcp-server@0.0.4": "patches/hono-mcp-server@0.0.4.patch"
+  }
+}
