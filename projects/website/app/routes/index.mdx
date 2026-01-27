@@ -1,11 +1,13 @@
 ---
 title: 'AI with Hono'
+imageUrl: https://ss.yusukebe.com/6736542dcebf862d2e40aeb61d8e6b85cbca7c12c1f4435a8df806fb5b09362e.png
 ---
 
 # AI with Hono
 
 - January 21, 2026
 - [https://ai-with-hono.yusukebe.workers.dev/](https://ai-with-hono.yusukebe.workers.dev/)
+- [https://github.com/yusukebe/ai-with-hono](https://github.com/yusukebe/ai-with-hono)
 
 ## Me
 
@@ -15,6 +17,19 @@ title: 'AI with Hono'
 - A founder of Bokete
 - Creator of Hono
 - [https://github.com/yusukebe](https://github.com/yusukebe)
+
+## Workers Tech Talks
+
+![Workers Tech Talks](https://ss.yusukebe.com/cdn-cgi/image/format=auto,width=800,quality=75/44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a_2276x1414.png)
+
+- [https://blog.yusu.ke/workers-tech-talks-5/](https://blog.yusu.ke/workers-tech-talks-5/)
+
+## Hono Conference
+
+![Hono Conferece](https://ss.yusukebe.com/cf560d454d0fb1091fd60aae1e578fe728be97d5baabb62c521cc8988f570adb.png)
+
+- [Hono Conference 2025 ── 「Hono CLI」発表。AI時代に、コミュニティと進化するWebフレームワークの姿](https://findy-code.io/media/articles/hono-conf-2025)
+- [“You might not need Hono” 高校1年生のコントリビューターが語るHonoの未来](https://findy-code.io/media/articles/hono-conf-2025-keynote)
 
 ## Honoの現状
 
@@ -69,6 +84,7 @@ title: 'AI with Hono'
 - 2025/10/18 Hono Conferenceで発表
 - "CLI for Human and AI with Hono"
 - `npm install @hono/cli`
+- [Hono CLI 爆誕](https://zenn.dev/yusukebe/articles/ff69c13ccafb28)
 
 ## 全く新しいコンセプト
 
@@ -191,7 +207,7 @@ hono serve \
 ```bash
 hono serve \
   --use "logger" \
-  --use "bashcAuth({username:'foo',password:'bar'})" \
+  --use "basicAuth({username:'foo',password:'bar'})" \
   src/index.ts
 ```
 
@@ -256,7 +272,7 @@ hono --help
 hono docs
 
 # Search documentation
-hono search middleware
+hono search
 
 # Send request to Hono app
 hono request
@@ -300,6 +316,8 @@ workers-fetch --timeout 5 /api/slow
 
 - Hono CLIを利用したVS Codeの拡張
 - リクエスト、Watch、Debugができる
+- [https://github.com/honojs/vscode](https://github.com/honojs/vscode)
+- [https://marketplace.visualstudio.com/items?itemName=Hono.hono](https://marketplace.visualstudio.com/items?itemName=Hono.hono)
 
 ![SS](https://ss.yusukebe.com/ffd20735fc6c04263e450b382502d7a0367d998ab5715f4b090d5e5ec709925d.png)
 
@@ -316,7 +334,7 @@ workers-fetch --timeout 5 /api/slow
   - MCPライブラリがHonoを使っている
   - HonoアプリでMCPサーバーを作る
 
-## MCPライブラリがHonoを使っている
+## AI系ライブラリがHonoを使っている
 
 - [Mastra](https://github.com/mastra-ai/mastra)
 - [MCP公式SDK](https://github.com/modelcontextprotocol/typescript-sdk)
@@ -513,6 +531,7 @@ const app = new Hono()
 app.get('/', (c) => {
   return c.json({ message: 'Hello, MCP Server!' })
 })
+
 app.post(
   '/hello',
   registerTool({
@@ -534,6 +553,14 @@ export default mcp(app, {
 ```
 
 ![hono-mcp-server](https://ss.yusukebe.com/dddd6f9215dc4f2e70b692033f8eebcf1af93ea9e346938e3a14cfb41208d68e.png)
+
+## MCP Apps
+
+![MCP Apps](https://ss.yusukebe.com/aebddfe5d19d3391599c00f06974dc2983360c7b04c9f50eb9aca49506a12ddf.png)
+
+- [https://blog.modelcontextprotocol.io/posts/2026-01-26-mcp-apps/](https://blog.modelcontextprotocol.io/posts/2026-01-26-mcp-apps/)
+- 昨日発表
+- HonoはMCPサーバー、さらにUIも作れるので、使えそう
 
 # 3. HonoでAIアプリをつくる
 
@@ -599,6 +626,27 @@ for await (let event of events) {
 - Claude
 - [Replicate](https://replicate.com/)
 - etc.
+
+## Replicateの例
+
+```ts
+import { Hono } from 'hono'
+import Replicate from 'replicate'
+
+const app = new Hono()
+
+app.get('/', async (c) => {
+  const replicate = new Replicate()
+  const output = await replicate.run('google/imagen-4', {
+    input: {
+      prompt: 'A mascot of Hono framework flying in the sky'
+    }
+  })
+  return c.body(output as ReadableStream)
+})
+
+export default app
+```
 
 ## チャットアプリの例
 
