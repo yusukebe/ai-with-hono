@@ -1,6 +1,6 @@
 import type {} from 'hono'
 
-type Meta = { title?: string; url?: string; imageUrl?: string }
+type Meta = { title?: string; url?: string; imageUrl?: string; description?: string }
 
 declare module 'hono' {
   interface Env {
